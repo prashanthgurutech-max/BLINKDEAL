@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLINKDEAL6 watch - Myntra gold bars</title>
+<style>
+:root{--bg:#0f1a2b;--panel:#17263d;--line:#2a3d5c;--text:#e8edf5;--mute:#8a98b0;--gold:#e0b24a;--live:#3ddc97;--off:#ff6b6b}
+@media (prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--line:#d5dbe6;--text:#14202f;--mute:#5b6b82;--gold:#9a6b00;--live:#0a8a55;--off:#c0392b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif;padding:24px 16px}
+main{max-width:960px;margin:0 auto}
+h1{font:600 1.7rem/1.2 Georgia,serif;margin:0 0 16px}
+.banner{border:2px solid var(--off);border-radius:10px;padding:18px 20px;background:var(--panel)}
+.banner.live{border-color:var(--live)}
+.banner b{font:700 2rem/1.1 Georgia,serif;color:var(--off)}
+.banner.live b{color:var(--live)}
+.banner p{margin:6px 0 0;color:var(--mute);font-size:.9rem}
+.ctl{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0}
+label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mute);gap:4px}
+input{width:150px;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;max-width:300px}
+th{color:var(--mute);font-weight:500;font-size:.85rem}
+a{color:var(--gold)}
+.pos{color:var(--live)}.neg{color:var(--off)}
+small{color:var(--mute)}
+</style>
+</head>
+<body>
+<main>
+<h1>BLINKDEAL6 on Myntra gold bars</h1>
+<div id="banner" class="banner"><b>Checking...</b><p>Loading the latest result.</p></div>
+<div class="ctl">
+<label>24K gold rate (Rs per gram)<input id="rate" type="number" min="0" placeholder="e.g. 7500"></label>
+<label>Coupon discount (%)<input id="pct" type="number" min="0" max="100" value="6"></label>
+</div>
+<div class="wrap"><table>
+<thead><tr><th>Item</th><th>Weight</th><th>Listed</th><th>You pay</th><th>Per gram</th><th>Gold worth</th><th>Difference</th></tr></thead>
+<tbody id="rows"><tr><td colspan="7"><small>No items yet.</small></td></tr></tbody>
+</table></div>
+<p><small>When a card shows a coupon price, that price is used; otherwise the discount box (6%) applies. Enter today's gold rate yourself. 22K counts as 91.6% of 24K, 18K as 75%. Detection searches the public Myntra page for the code, so a code that only appears at checkout may not be caught. Data points, not advice.</small></p>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const inr=n=>'Rs '+Math.round(n).toLocaleString('en-IN');
+const store=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+let data={items:[]};
+
+async function load(){
+  try{data=await (await fetch('data.json?'+Date.now())).json()}
+  catch(e){data={items:[],error:'No data yet. Run the workflow once in GitHub.'}}
+  render();
+}
+function render(){
+  const live=!!data.live,b=$('#banner');
+  b.className='banner'+(live?' live':'');
+  const when=data.checked?new Date(data.checked).toLocaleString():'never';
+  b.innerHTML='<b>'+(live?'LIVE':'Not live yet')+'</b><p>Data last changed: '+esc(when)+
+    (data.error?' | Problem: '+esc(data.error):'')+'</p>';
+  const rate=parseFloat($('#rate').value)||0,pct=parseFloat($('#pct').value)||0;
+  const k={24:1,22:.916,18:.75};
+  const rows=(data.items||[]).map(i=>{
+    const pay=i.coupon||i.price*(1-pct/100),worth=rate?i.weight*rate*(k[i.purity]||1):null;
+    return{...i,pay,pg:pay/i.weight,worth,diff:worth===null?null:worth-pay};
+  }).sort((a,b)=>a.pg-b.pg);
+  $('#rows').innerHTML=rows.length?rows.map(r=>'<tr><td><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a></td><td>'+r.weight+' g</td><td>'+inr(r.price)+'</td><td>'+inr(r.pay)+'</td><td>'+inr(r.pg)+'</td><td>'+(r.worth===null?'-':inr(r.worth))+'</td><td class="'+(r.diff>0?'pos':'neg')+'">'+(r.diff===null?'-':(r.diff>0?'+':'')+inr(r.diff))+'</td></tr>').join(''):'<tr><td colspan="7"><small>No items yet.</small></td></tr>';
+}
+$('#rate').value=store('rate')||'';
+$('#rate').addEventListener('input',e=>{store('rate',e.target.value);render()});
+$('#pct').addEventListener('input',render);
+load();setInterval(load,300000);
+</script>
+</body>
+</html>
