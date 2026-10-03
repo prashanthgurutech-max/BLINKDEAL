@@ -21,11 +21,17 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
       - run: python check.py
+        continue-on-error: true
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+      - run: python backup.py
+        continue-on-error: true
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
       - run: |
           git config user.name "watch-bot"
           git config user.email "watch-bot@users.noreply.github.com"
-          git add data.json
+          git add -A
           git diff --cached --quiet || (git commit -m "update data" && git push)
